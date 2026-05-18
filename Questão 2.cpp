@@ -1,0 +1,240 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_PRODUTOS 40
+
+// Estrutura para armazenar os dados do produto
+typedef struct {
+    int codigo;
+    char descricao[50];
+    float valor_unitario;
+    int quantidade;
+} Produto;
+
+// --- Função Auxiliar ---
+// Retorna o índice do produto no vetor ou -1 se não encontrar
+int buscarProduto(Produto cadastro[], int total, int codigo) {
+    for (int i = 0; i < total; i++) {
+        if (cadastro[i].codigo == codigo) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// (a) Procedimento para cadastrar um novo produto
+void cadastrarProduto(Produto cadastro[], int *total) {
+    if (*total >= MAX_PRODUTOS) {
+        printf("Erro: Capacidade maxima de cadastro (%d) atingida.\n", MAX_PRODUTOS);
+        return;
+    }
+
+    printf("\n--- Cadastro de Novo Produto ---\n");
+    printf("Codigo: ");
+    scanf("%d", &cadastro[*total].codigo);
+    
+    printf("Descricao: ");
+    setbuf(stdin, NULL); 
+    fgets(cadastro[*total].descricao, 50, stdin);
+    cadastro[*total].descricao[strcspn(cadastro[*total].descricao, "\n")] = '\0'; 
+    
+    printf("Valor Unitario (R$): ");
+    scanf("%f", &cadastro[*total].valor_unitario);
+    
+    printf("Quantidade Inicial em Estoque: ");
+    scanf("%d", &cadastro[*total].quantidade);
+    
+    (*total)++;
+    printf("Produto cadastrado com sucesso!\n");
+}
+
+// (b) Procedimento para alterar o valor unitario
+void alterarValorUnitario(Produto cadastro[], int total, int codigo) {
+    int indice = buscarProduto(cadastro, total, codigo);
+    if (indice != -1) {
+        printf("Valor atual: R$ %.2f\n", cadastro[indice].valor_unitario);
+        printf("Informe o novo valor: R$ ");
+        scanf("%f", &cadastro[indice].valor_unitario);
+        printf("Valor alterado com sucesso!\n");
+    } else {
+        printf("Erro: Produto nao encontrado.\n");
+    }
+}
+
+// (c) Funcao para informar o valor unitario
+float obterValorUnitario(Produto cadastro[], int total, int codigo) {
+    int indice = buscarProduto(cadastro, total, codigo);
+    if (indice != -1) {
+        return cadastro[indice].valor_unitario;
+    }
+    return -1.0; 
+}
+
+// (d) Funcao para informar a quantidade em estoque
+int obterEstoque(Produto cadastro[], int total, int codigo) {
+    int indice = buscarProduto(cadastro, total, codigo);
+    if (indice != -1) {
+        return cadastro[indice].quantidade;
+    }
+    return -1;
+}
+
+// (e) Procedimento de venda
+void venderProduto(Produto cadastro[], int total, int codigo, int qtd_desejada) {
+    int indice = buscarProduto(cadastro, total, codigo);
+    
+    if (indice == -1) {
+        printf("Erro: Produto nao encontrado.\n");
+        return;
+    }
+
+    int estoque = cadastro[indice].quantidade;
+    float preco = cadastro[indice].valor_unitario;
+
+    if (estoque == 0) {
+        printf("Aviso: Produto com estoque zero no momento.\n");
+        return;
+    }
+
+    if (estoque < qtd_desejada) {
+        printf("Aviso: So temos %d unidades em estoque. Deseja levar todo o estoque restante? (1-Sim / 2-Nao): ", estoque);
+        int opcao;
+        scanf("%d", &opcao);
+        if (opcao == 1) {
+            float valor_pagar = estoque * preco;
+            cadastro[indice].quantidade = 0;
+            printf("Venda realizada! Valor a ser pago: R$ %.2f\n", valor_pagar);
+        } else {
+            printf("Venda cancelada pelo usuario.\n");
+        }
+    } else {
+        float valor_pagar = qtd_desejada * preco;
+        cadastro[indice].quantidade -= qtd_desejada;
+        printf("Venda realizada! Valor a ser pago: R$ %.2f\n", valor_pagar);
+    }
+}
+
+// (f) Procedimento para atualizar a quantidade em estoque (reposicao)
+void atualizarEstoque(Produto cadastro[], int total, int codigo) {
+    int indice = buscarProduto(cadastro, total, codigo);
+    if (indice != -1) {
+        int qtd_adicional;
+        printf("Estoque atual: %d\n", cadastro[indice].quantidade);
+        printf("Quantidade a ser adicionada: ");
+        scanf("%d", &qtd_adicional);
+        cadastro[indice].quantidade += qtd_adicional;
+        printf("Estoque atualizado com sucesso! Novo estoque: %d\n", cadastro[indice].quantidade);
+    } else {
+        printf("Erro: Produto nao encontrado.\n");
+    }
+}
+
+// (g) Procedimento para exibir codigo e descricao de todos os produtos
+void exibirTodosProdutos(Produto cadastro[], int total) {
+    if (total == 0) {
+        printf("Nenhum produto cadastrado ainda.\n");
+        return;
+    }
+    printf("\n--- Lista de Todos os Produtos ---\n");
+    for (int i = 0; i < total; i++) {
+        printf("Codigo: %d | Descricao: %s\n", cadastro[i].codigo, cadastro[i].descricao);
+    }
+}
+
+// (h) Procedimento para exibir produtos com estoque zero
+void exibirEstoqueZero(Produto cadastro[], int total) {
+    if (total == 0) {
+        printf("Nenhum produto cadastrado.\n");
+        return;
+    }
+    int encontrou = 0;
+    printf("\n--- Produtos com Estoque Zerado ---\n");
+    for (int i = 0; i < total; i++) {
+        if (cadastro[i].quantidade == 0) {
+            printf("Codigo: %d | Descricao: %s\n", cadastro[i].codigo, cadastro[i].descricao);
+            encontrou = 1;
+        }
+    }
+    if (!encontrou) {
+        printf("Nao ha produtos com estoque zerado no momento.\n");
+    }
+}
+
+// Programa principal com menu interativo
+int main() {
+    Produto estoque[MAX_PRODUTOS];
+    int totalProdutos = 0; 
+    int opcao, codigo, qtd;
+    float retorno_float;
+    int retorno_int;
+
+    do {
+        printf("\n======= SISTEMA PAPELARIA ESCOLAR =======\n");
+        printf("1. Cadastrar novo produto\n");
+        printf("2. Alterar valor unitario\n");
+        printf("3. Consultar valor unitario\n");
+        printf("4. Consultar estoque\n");
+        printf("5. Realizar venda\n");
+        printf("6. Atualizar estoque (Reposicao)\n");
+        printf("7. Exibir todos os produtos\n");
+        printf("8. Exibir produtos com estoque zerado\n");
+        printf("0. Sair do sistema\n");
+        printf("=========================================\n");
+        printf("Escolha uma opcao: ");
+        scanf("%d", &opcao);
+
+        switch (opcao) {
+            case 1:
+                cadastrarProduto(estoque, &totalProdutos);
+                break;
+            case 2:
+                printf("Informe o codigo do produto: ");
+                scanf("%d", &codigo);
+                alterarValorUnitario(estoque, totalProdutos, codigo);
+                break;
+            case 3:
+                printf("Informe o codigo do produto: ");
+                scanf("%d", &codigo);
+                retorno_float = obterValorUnitario(estoque, totalProdutos, codigo);
+                if (retorno_float >= 0)
+                    printf("Valor unitario: R$ %.2f\n", retorno_float);
+                else
+                    printf("Produto nao encontrado.\n");
+                break;
+            case 4:
+                printf("Informe o codigo do produto: ");
+                scanf("%d", &codigo);
+                retorno_int = obterEstoque(estoque, totalProdutos, codigo);
+                if (retorno_int >= 0)
+                    printf("Quantidade em estoque: %d unidades\n", retorno_int);
+                else
+                    printf("Produto nao encontrado.\n");
+                break;
+            case 5:
+                printf("Informe o codigo do produto: ");
+                scanf("%d", &codigo);
+                printf("Quantidade desejada: ");
+                scanf("%d", &qtd);
+                venderProduto(estoque, totalProdutos, codigo, qtd);
+                break;
+            case 6:
+                printf("Informe o codigo do produto: ");
+                scanf("%d", &codigo);
+                atualizarEstoque(estoque, totalProdutos, codigo);
+                break;
+            case 7:
+                exibirTodosProdutos(estoque, totalProdutos);
+                break;
+            case 8:
+                exibirEstoqueZero(estoque, totalProdutos);
+                break;
+            case 0:
+                printf("Encerrando o sistema...\n");
+                break;
+            default:
+                printf("Opcao invalida. Tente novamente.\n");
+        }
+    } while (opcao != 0);
+
+    return 0;
+}
