@@ -1,0 +1,186 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_CONTAS 100
+
+// Estrutura para armazenar os dados de uma conta
+typedef struct {
+    int numero;
+    char nome[50];
+    char cpf[15];
+    char telefone[20];
+    float saldo;
+} Conta;
+
+// (a) Função de busca
+int buscarConta(Conta cadastro[], int total, int numero_conta) {
+    if (total == 0) {
+        return -1; 
+    }
+    for (int i = 0; i < total; i++) {
+        if (cadastro[i].numero == numero_conta) {
+            return i; 
+        }
+    }
+    return -2;
+}
+
+// (b) cadastrar nova conta
+void cadastrarConta(Conta cadastro[], int *total, int numero_conta) {
+    if (*total >= MAX_CONTAS) {
+        printf("Erro: O cadastro atingiu o limite maximo de %d contas.\n", MAX_CONTAS);
+        return;
+    }
+
+    int pos = buscarConta(cadastro, *total, numero_conta);
+    
+    if (pos >= 0) {
+        printf("Operacao negada: Ja existe uma conta cadastrada com o numero %d.\n", numero_conta);
+    } else {
+        cadastro[*total].numero = numero_conta;
+        
+        printf("Nome do cliente: ");
+        setbuf(stdin, NULL);
+        fgets(cadastro[*total].nome, 50, stdin);
+        cadastro[*total].nome[strcspn(cadastro[*total].nome, "\n")] = '\0';
+        
+        printf("CPF: ");
+        setbuf(stdin, NULL);
+        fgets(cadastro[*total].cpf, 15, stdin);
+        cadastro[*total].cpf[strcspn(cadastro[*total].cpf, "\n")] = '\0';
+        
+        printf("Telefone de contato: ");
+        setbuf(stdin, NULL);
+        fgets(cadastro[*total].telefone, 20, stdin);
+        cadastro[*total].telefone[strcspn(cadastro[*total].telefone, "\n")] = '\0';
+        
+        printf("Saldo inicial (R$): ");
+        scanf("%f", &cadastro[*total].saldo);
+        
+        (*total)++;
+        printf("Conta cadastrada com sucesso!\n");
+    }
+}
+
+// (c) consultar o saldo
+void consultarSaldo(Conta cadastro[], int total, int numero_conta) {
+    int pos = buscarConta(cadastro, total, numero_conta);
+    
+    if (pos >= 0) {
+        printf("Saldo da conta %d: R$ %.2f\n", numero_conta, cadastro[pos].saldo);
+    } else {
+        printf("Erro: A conta %d nao esta cadastrada.\n", numero_conta);
+    }
+}
+
+// (d) fazer um depósito
+void fazerDeposito(Conta cadastro[], int total, int numero_conta) {
+    int pos = buscarConta(cadastro, total, numero_conta);
+    
+    if (pos >= 0) {
+        float valor;
+        printf("Informe o valor do deposito: R$ ");
+        scanf("%f", &valor);
+        
+        if (valor > 0) {
+            cadastro[pos].saldo += valor;
+            printf("Deposito realizado! Novo saldo: R$ %.2f\n", cadastro[pos].saldo);
+        } else {
+            printf("Erro: O valor do deposito deve ser maior que zero.\n");
+        }
+    } else {
+        printf("Erro: A conta %d nao esta cadastrada.\n", numero_conta);
+    }
+}
+
+// (e) fazer um saque
+void fazerSaque(Conta cadastro[], int total, int numero_conta) {
+    int pos = buscarConta(cadastro, total, numero_conta);
+    
+    if (pos >= 0) {
+        float valor;
+        printf("Informe o valor do saque: R$ ");
+        scanf("%f", &valor);
+        
+        if (valor > 0 && cadastro[pos].saldo >= valor) {
+            cadastro[pos].saldo -= valor;
+            printf("Saque realizado! Novo saldo: R$ %.2f\n", cadastro[pos].saldo);
+        } else if (valor > cadastro[pos].saldo) {
+            printf("Operacao negada: Nao existe saldo suficiente (Saldo atual: R$ %.2f).\n", cadastro[pos].saldo);
+        } else {
+            printf("Erro: O valor de saque deve ser maior que zero.\n");
+        }
+    } else {
+        printf("Erro: A conta %d nao esta cadastrada.\n", numero_conta);
+    }
+}
+
+// (f) exibição das contas
+void exibirContas(Conta cadastro[], int total) {
+    if (total == 0) {
+        printf("Nenhuma conta cadastrada neste setor.\n");
+        return;
+    }
+    printf("--- Relatorio de Contas ---\n");
+    for (int i = 0; i < total; i++) {
+        printf("Conta: %d | Titular: %s | Telefone: %s\n", 
+               cadastro[i].numero, cadastro[i].nome, cadastro[i].telefone);
+    }
+    printf("---------------------------\n");
+}
+
+int main() {
+    Conta correntes[MAX_CONTAS];
+    int totalCorrentes = 0;
+    
+    Conta poupancas[MAX_CONTAS];
+    int totalPoupancas = 0;
+    
+    int opcao, tipo, num_conta;
+
+    do {
+        printf("\n=== BANCO DINHEIRO CERTO ===\n");
+        printf("1. Cadastrar nova conta\n");
+        printf("2. Consultar saldo\n");
+        printf("3. Fazer deposito\n");
+        printf("4. Fazer saque\n");
+        printf("5. Exibir relatorio de contas\n");
+        printf("0. Sair\n");
+        printf("Escolha uma opcao: ");
+        scanf("%d", &opcao);
+
+        if (opcao >= 1 && opcao <= 5) {
+            printf("Selecione o tipo de conta (1-Corrente | 2-Poupanca): ");
+            scanf("%d", &tipo);
+            
+            if (opcao != 5) {
+                printf("Informe o numero da conta: ");
+                scanf("%d", &num_conta);
+            }
+
+            Conta *cadastroAlvo = (tipo == 1) ? correntes : poupancas;
+            int *totalAlvo = (tipo == 1) ? &totalCorrentes : &totalPoupancas;
+
+            switch (opcao) {
+                case 1:
+                    cadastrarConta(cadastroAlvo, totalAlvo, num_conta);
+                    break;
+                case 2:
+                    consultarSaldo(cadastroAlvo, *totalAlvo, num_conta);
+                    break;
+                case 3:
+                    fazerDeposito(cadastroAlvo, *totalAlvo, num_conta);
+                    break;
+                case 4:
+                    fazerSaque(cadastroAlvo, *totalAlvo, num_conta);
+                    break;
+                case 5:
+                    printf("\n%s\n", (tipo == 1) ? "--- CONTAS CORRENTES ---" : "--- CONTAS POUPANCAS ---");
+                    exibirContas(cadastroAlvo, *totalAlvo);
+                    break;
+            }
+        }
+    } while (opcao != 0);
+
+    return 0;
+}
